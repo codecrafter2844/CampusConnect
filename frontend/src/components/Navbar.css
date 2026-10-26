@@ -1,0 +1,160 @@
+
+.public-header {
+  height: 96px;
+  padding: 0 clamp(20px, 6vw, 90px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  background: #fff;
+  border-bottom: 1px solid #eeecf5;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.public-brand {
+  flex-shrink: 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font: 800 25px "Plus Jakarta Sans", sans-serif;
+  letter-spacing: -0.8px;
+}
+
+.brand-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: #6855e8;
+  color: white;
+}
+
+.brand-light {
+  color: #6855e8;
+}
+
+.public-nav {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.public-nav a {
+  font-size: 17px;
+  color: #77768c;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.public-nav a:hover {
+  color: #6855e8;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.header-login,
+.header-signup,
+.header-nav-button {
+  border: 0;
+  border-radius: 9px;
+  padding: 13px 22px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.header-login {
+  border: 2px solid #6855e8;
+  background: #fff;
+  color: #6855e8;
+}
+
+.header-login:hover {
+  background: #f4f1ff;
+  color: #6855e8;
+}
+
+.header-signup {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  background: #6855e8;
+  color: #fff;
+  box-shadow: 0 6px 16px #6855e826;
+}
+
+.header-signup:hover {
+  background: #5744d3;
+}
+
+.header-signup span {
+  font-size: 16px;
+}
+
+.header-nav-button {
+  background: transparent;
+  color: #68647e;
+}
+
+.header-nav-button.active {
+  background: #f0edff;
+  color: #6855e8;
+}
+
+@media (max-width: 1000px) {
+  .public-header {
+    padding: 0 24px;
+    gap: 16px;
+  }
+
+  .public-nav {
+    gap: 15px;
+  }
+}
+
+@media (max-width: 720px) {
+  .public-header {
+    height: auto;
+    min-height: 72px;
+    padding: 14px 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .public-nav {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    margin: 0;
+    padding-top: 8px;
+    border-top: 1px solid #f0eef6;
+  }
+
+  .public-nav a {
+    font-size: 11px;
+  }
+
+  .header-actions {
+    margin-left: auto;
+    gap: 4px;
+  }
+
+  .header-login,
+  .header-signup,
+  .header-nav-button {
+    padding: 9px;
+    font-size: 10px;
+  }
+}
