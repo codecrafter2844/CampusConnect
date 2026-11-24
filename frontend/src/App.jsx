@@ -13,6 +13,23 @@ import Events from "./pages/Events";
 
 const API = "http://localhost:8080";
 
+// Loads Razorpay's checkout script once, only when a payment is needed.
+function loadRazorpay() {
+  return new Promise((resolve, reject) => {
+    if (window.Razorpay) {
+      resolve(window.Razorpay);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(window.Razorpay);
+    script.onerror = () =>
+      reject(new Error("Could not load the payment window. Check your internet connection."));
+    document.body.appendChild(script);
+  });
+}
+
 function readEvent(event) {
   const start = event.startDateTime || event.startDate || event.date;
 
@@ -45,7 +62,9 @@ function readEvent(event) {
       event.description ||
       "More details about this event will be available soon.",
     displayPrice: Number(event.price || 0),
-    displaySeats: event.seats ?? event.capacity ?? null,
+    displaySeats: event.seatsLeft ?? event.seats ?? event.capacity ?? null,
+    soldOut: event.seatsLeft != null && event.seatsLeft <= 0,
+    displayClub: event.organizerName || "",
     displayImage: event.imageUrl || event.coverImageUrl || event.image || "",
   };
 }
@@ -102,6 +121,8 @@ function App() {
   const [registrationsLoading, setRegistrationsLoading] = useState(false);
   const [registrationsError, setRegistrationsError] = useState("");
   const [registrationLoading, setRegistrationLoading] = useState(false);
+
+  const [notifications, setNotifications] = useState([]);
 
   // Load public events.
   useEffect(() => {
@@ -198,6 +219,162 @@ function App() {
       active = false;
     };
   }, [token, student]);
+
+  // Reload events so seat counts stay correct after a registration.
+  async function reloadEvents() {
+    try {
+      const response = await fetch(`${API}/api/events`);
+      const data = await readResponse(response);
+      if (response.ok && Array.isArray(data)) {
+        setEvents(data.map(readEvent));
+      }
+    } catch {
+      // keep showing the events we already have
+    }
+  }
+
+  async function reloadRegistrations(activeToken = token) {
+    if (!activeToken) return;
+
+    try {
+      const response = await fetch(`${API}/api/registrations/my`, {
+        headers: { Authorization: `Bearer ${activeToken}` },
+      });
+      const data = await readResponse(response);
+
+      if (response.ok) {
+        setRegistrations(Array.isArray(data) ? data : []);
+        setRegistrationsError("");
+      }
+    } catch {
+      // ignore, the page already shows the last known list
+    }
+  }
+
+  async function loadNotifications(activeToken = token) {
+    if (!activeToken) return 0;
+
+    try {
+      const response = await fetch(`${API}/api/notifications`, {
+        headers: { Authorization: `Bearer ${activeToken}` },
+      });
+      const data = await readResponse(response);
+
+      if (response.ok && Array.isArray(data?.items)) {
+        setNotifications(data.items);
+        return data.unread || 0;
+      }
+    } catch {
+      // notifications are optional, never block the dashboard
+    }
+
+    return 0;
+  }
+
+  async function markNotificationsRead() {
+    if (!token) return;
+
+    setNotifications((items) => items.map((n) => ({ ...n, seen: true })));
+
+    try {
+      await fetch(`${API}/api/notifications/read-all`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch {
+      // ignore
+    }
+  }
+
+  // Opens Razorpay checkout for a registration that is waiting for payment.
+  async function startPayment(registrationId, eventTitle) {
+    setNotice("");
+
+    try {
+      const orderResponse = await fetch(
+        `${API}/api/payments/${registrationId}/order`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      const order = await readResponse(orderResponse);
+
+      if (!orderResponse.ok) {
+        throw new Error(
+          getErrorMessage(order, "Could not start the payment.")
+        );
+      }
+
+      const Razorpay = await loadRazorpay();
+
+      const checkout = new Razorpay({
+        key: order.keyId,
+        amount: order.amount,
+        currency: order.currency,
+        name: "CampusConnect",
+        description: eventTitle || order.eventTitle,
+        order_id: order.orderId,
+        prefill: { name: order.studentName, email: order.studentEmail },
+        theme: { color: "#6855e8" },
+        handler: async (payment) => {
+          try {
+            const verifyResponse = await fetch(
+              `${API}/api/payments/${registrationId}/verify`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  razorpayOrderId: payment.razorpay_order_id,
+                  razorpayPaymentId: payment.razorpay_payment_id,
+                  razorpaySignature: payment.razorpay_signature,
+                }),
+              }
+            );
+
+            const verified = await readResponse(verifyResponse);
+
+            if (!verifyResponse.ok) {
+              throw new Error(
+                getErrorMessage(verified, "Payment could not be verified.")
+              );
+            }
+
+            setNotice(
+              `Payment successful. You are registered for ${eventTitle || order.eventTitle}!`
+            );
+          } catch (error) {
+            setNotice(error.message || "Payment could not be verified.");
+          }
+
+          await reloadRegistrations();
+          await reloadEvents();
+        },
+        modal: {
+          ondismiss: () => {
+            setNotice(
+              "Payment not completed. Your seat is held for 30 minutes - finish paying from My Registrations."
+            );
+          },
+        },
+      });
+
+      checkout.on("payment.failed", (failure) => {
+        setNotice(
+          failure?.error?.description ||
+          "Payment failed. You can try again from My Registrations."
+        );
+      });
+
+      checkout.open();
+    } catch (error) {
+      setNotice(error.message || "Could not start the payment.");
+    }
+  }
 
   function openAuth(mode = "login") {
     setAuthMode(mode);
@@ -328,7 +505,13 @@ function App() {
       setAuthError("");
       setAuthMessage("");
       setStudentSection("Dashboard");
-      setNotice(`Welcome back, ${profile.name || "student"}!`);
+
+      const unread = await loadNotifications(data.token);
+      setNotice(
+        unread > 0
+          ? `Welcome back, ${profile.name || "student"}! You have ${unread} new notification${unread === 1 ? "" : "s"}.`
+          : `Welcome back, ${profile.name || "student"}!`
+      );
     } catch (error) {
       setAuthError(
         error.message || "Could not connect to the server. Please try again."
@@ -348,6 +531,7 @@ function App() {
     setConfirmPassword("");
 
     setRegistrations([]);
+    setNotifications([]);
     setStudentSection("Dashboard");
 
     setSelectedEvent(null);
@@ -394,35 +578,23 @@ function App() {
         );
       }
 
-      setNotice(
-        `Successfully registered for ${eventItem.displayTitle || eventItem.title
-        }!`
-      );
-
       setSelectedEvent(null);
       setStudentSection("My Registrations");
 
-      const registrationsResponse = await fetch(
-        `${API}/api/registrations/my`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const title = eventItem.displayTitle || eventItem.title;
 
-      const registrationsData = await readResponse(registrationsResponse);
-
-      if (registrationsResponse.ok) {
-        const items = Array.isArray(registrationsData)
-          ? registrationsData
-          : Array.isArray(registrationsData?.content)
-            ? registrationsData.content
-            : [];
-
-        setRegistrations(items);
-        setRegistrationsError("");
+      if (data?.requiresPayment) {
+        setNotice(`Seat held for ${title}. Complete the payment to confirm.`);
+        await reloadRegistrations();
+        await reloadEvents();
+        await startPayment(data.registrationId, title);
+        return;
       }
+
+      setNotice(`Successfully registered for ${title}!`);
+
+      await reloadRegistrations();
+      await reloadEvents();
     } catch (error) {
       setNotice(
         error.message || "Could not register. Please try again."
@@ -503,7 +675,11 @@ function App() {
             registrations={registrations}
             loading={registrationsLoading || registrationLoading}
             error={registrationsError}
-
+            notifications={notifications}
+            onMarkNotificationsRead={markNotificationsRead}
+            onPay={(registration) =>
+              startPayment(registration.registrationId, registration.title)
+            }
             student={student}
             setStudentSection={setStudentSection}
             openAuth={openAuth}

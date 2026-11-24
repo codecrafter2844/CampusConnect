@@ -30,7 +30,22 @@ public class Registration {
 
     private LocalDateTime registeredAt;
 
+    /** CONFIRMED, PENDING_PAYMENT or CANCELLED. */
     private String status = "CONFIRMED";
+
+    /** NOT_REQUIRED, PENDING, PAID, REFUND_PENDING or REFUNDED. */
+    private String paymentStatus = "NOT_REQUIRED";
+
+    /** Amount in rupees charged for this registration. */
+    private Integer amount = 0;
+
+    private String razorpayOrderId;
+    private String razorpayPaymentId;
+    private LocalDateTime paidAt;
+
+    @Column(length = 500)
+    private String cancelReason;
+    private LocalDateTime cancelledAt;
 
     public Registration() {
     }
@@ -66,6 +81,10 @@ public class Registration {
         return registeredAt;
     }
 
+    public void setRegisteredAt(LocalDateTime registeredAt) {
+    this.registeredAt = registeredAt;
+}
+
     public String getStatus() {
         return status;
     }
@@ -73,4 +92,25 @@ public class Registration {
     public void setStatus(String status) {
         this.status = status;
     }
+
+    public String getPaymentStatus() { return paymentStatus == null ? "NOT_REQUIRED" : paymentStatus; }
+    public void setPaymentStatus(String paymentStatus) { this.paymentStatus = paymentStatus; }
+
+    public Integer getAmount() { return amount == null ? 0 : amount; }
+    public void setAmount(Integer amount) { this.amount = amount; }
+
+    public String getRazorpayOrderId() { return razorpayOrderId; }
+    public void setRazorpayOrderId(String razorpayOrderId) { this.razorpayOrderId = razorpayOrderId; }
+
+    public String getRazorpayPaymentId() { return razorpayPaymentId; }
+    public void setRazorpayPaymentId(String razorpayPaymentId) { this.razorpayPaymentId = razorpayPaymentId; }
+
+    public LocalDateTime getPaidAt() { return paidAt; }
+    public void setPaidAt(LocalDateTime paidAt) { this.paidAt = paidAt; }
+
+    public String getCancelReason() { return cancelReason; }
+    public void setCancelReason(String cancelReason) { this.cancelReason = cancelReason; }
+
+    public LocalDateTime getCancelledAt() { return cancelledAt; }
+    public void setCancelledAt(LocalDateTime cancelledAt) { this.cancelledAt = cancelledAt; }
 }

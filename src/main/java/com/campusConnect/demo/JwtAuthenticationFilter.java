@@ -42,6 +42,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Claims claims = jwtService.extractClaims(token);
                 String email = claims.getSubject();
 
+                // Older student tokens have no role claim.
+                String role = claims.get("role", String.class);
+                if (role == null) role = JwtService.ROLE_STUDENT;
+
+                // An organizer who has not changed the temporary password
+                // yet only gets the limited ORGANIZER_PENDING authority.
+                Boolean mustChange = claims.get("mustChange", Boolean.class);
+                String authority = "ROLE_" + role;
+                if (JwtService.ROLE_ORGANIZER.equals(role)
+                        && Boolean.TRUE.equals(mustChange)) {
+                    authority = "ROLE_ORGANIZER_PENDING";
+                }
+
                 if (email != null &&
                         SecurityContextHolder.getContext()
                                 .getAuthentication() == null) {
@@ -52,7 +65,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     null,
                                     java.util.List.of(
                                             new SimpleGrantedAuthority(
-                                                    "ROLE_STUDENT")
+                                                    authority)
                                     )
                             );
 

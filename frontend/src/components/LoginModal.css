@@ -309,3 +309,8 @@
   color: #07878a !important;
   box-shadow: 0 2px 7px rgba(32, 74, 73, 0.08);
 }
+
+.auth-note a {
+  color: #07878a;
+  font-weight: 700;
+}

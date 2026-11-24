@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import EventCard from "../components/EventCard";
 import "./Home.css";
 import Sidebar from "../components/Sidebar";
+import NotificationsBanner from "../components/NotificationsBanner";
 
 const CATEGORIES = [
   "All Events",
@@ -44,6 +45,8 @@ function Home({
   openAuth = () => { },
   setStudentSection = () => { },
   studentSection = "Dashboard",
+  notifications = [],
+  onMarkNotificationsRead = () => { },
 }) {
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -182,6 +185,13 @@ function Home({
             )}
           </div>
         </header>
+
+        {student && (
+          <NotificationsBanner
+            notifications={notifications}
+            onMarkRead={onMarkNotificationsRead}
+          />
+        )}
 
         {studentSection === "My Registrations" && student ? (
           <section className="dashboard-panel">

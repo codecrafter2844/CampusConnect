@@ -56,9 +56,13 @@ function EventCard({ event, onOpen, onRegister }) {
 
       <div className="event-footer">
         <span className="seats">
-          {event.displaySeats != null
-            ? `${event.displaySeats} seats`
-            : "Join the event"}
+          {event.soldOut
+            ? "Sold out"
+            : event.displaySeats != null
+              ? `${event.displaySeats} seats left`
+              : "Join the event"}
+          {" · "}
+          {event.displayPrice > 0 ? `₹${event.displayPrice}` : "Free"}
         </span>
 
         <div className="event-actions">
@@ -74,8 +78,9 @@ function EventCard({ event, onOpen, onRegister }) {
             className="register-button"
             type="button"
             onClick={() => onRegister(event)}
+            disabled={event.soldOut}
           >
-            Register →
+            {event.soldOut ? "Full" : "Register →"}
           </button>
         </div>
       </div>

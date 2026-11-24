@@ -1,4 +1,3 @@
-
 package com.campusConnect.demo;
 
 import java.util.List;
@@ -13,14 +12,15 @@ import org.springframework.web.bind.annotation.RestController;
 @CrossOrigin(origins = "http://localhost:5173")
 public class EventController {
 
-    private final EventRepository eventRepository;
+    private final EventService eventService;
 
-    public EventController(EventRepository eventRepository) {
-        this.eventRepository = eventRepository;
+    public EventController(EventService eventService) {
+        this.eventService = eventService;
     }
 
+    /** Public list: active events only, each with seatsLeft. */
     @GetMapping
     public List<Event> getEvents() {
-        return eventRepository.findAll();
+        return eventService.publicEvents();
     }
 }

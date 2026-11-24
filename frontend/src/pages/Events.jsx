@@ -144,7 +144,11 @@ function EventCard({ event, registered, onOpenEvent, onRegister }) {
 
       <div className="events-card-footer">
         <span className={registered ? "events-status registered" : "events-status"}>
-          {registered ? "✓ Registered" : "Open for registration"}
+          {registered
+            ? "✓ Registered"
+            : event.soldOut
+              ? "Sold out"
+              : `${event.displaySeats != null ? `${event.displaySeats} seats left · ` : ""}${event.displayPrice > 0 ? `₹${event.displayPrice}` : "Free"}`}
         </span>
 
         {registered ? (
@@ -160,8 +164,9 @@ function EventCard({ event, registered, onOpenEvent, onRegister }) {
             type="button"
             className="events-register-button"
             onClick={() => onRegister?.(event)}
+            disabled={event.soldOut}
           >
-            Register →
+            {event.soldOut ? "Full" : "Register →"}
           </button>
         )}
       </div>
@@ -190,6 +195,8 @@ openAuth = () => {}
     () =>
       new Set(
         registrations
+          .filter((r) => !["CANCELLED", "PENDING_PAYMENT"].includes(
+            String(r.status || "").toUpperCase()))
           .map(getRegistrationEventId)
           .filter((id) => id != null)
           .map(String)

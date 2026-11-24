@@ -71,17 +71,37 @@ function EventDetailsModal({ event, onClose, onRegister }) {
               <span aria-hidden="true">♧</span>
               <div>
                 <strong>Availability</strong>
-                <p>{event.displaySeats} seats</p>
+                <p>
+                  {event.soldOut
+                    ? "Sold out"
+                    : `${event.displaySeats} seats left`}
+                </p>
               </div>
             </div>
           )}
+
+          <div className="detail-info">
+            <span aria-hidden="true">₹</span>
+            <div>
+              <strong>Ticket</strong>
+              <p>
+                {event.displayPrice > 0 ? `₹${event.displayPrice}` : "Free"}
+                {event.displayClub ? ` · Hosted by ${event.displayClub}` : ""}
+              </p>
+            </div>
+          </div>
 
           <button
             className="detail-register"
             type="button"
             onClick={() => onRegister(event)}
+            disabled={event.soldOut}
           >
-            Register for Event →
+            {event.soldOut
+              ? "Event is full"
+              : event.displayPrice > 0
+                ? `Pay ₹${event.displayPrice} & Register →`
+                : "Register for Event →"}
           </button>
         </div>
       </section>

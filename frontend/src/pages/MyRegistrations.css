@@ -203,3 +203,36 @@
     padding-top: 70px;
   }
 }
+
+/* Payment and cancellation states */
+.registration-status.status-pending_payment {
+  background: #fff3dc;
+  color: #a86a00;
+}
+
+.registration-status.status-cancelled {
+  background: #fde8ea;
+  color: #b83a48;
+}
+
+.registration-row.is-cancelled {
+  background: #fffafa;
+}
+
+.registration-cancel-reason {
+  color: #b83a48 !important;
+}
+
+.registration-pay-button {
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 9px;
+  background: #6855e8;
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.registration-pay-button:hover {
+  background: #5644d1;
+}

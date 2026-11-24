@@ -265,3 +265,9 @@
     transition: none;
   }
 }
+
+.register-button:disabled {
+  background: #d8d7e3;
+  color: #85849a;
+  cursor: not-allowed;
+}

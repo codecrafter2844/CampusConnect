@@ -1,10 +1,16 @@
 
 package com.campusConnect.demo;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Transient;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 public class Event {
@@ -21,6 +27,31 @@ public class Event {
     private int seats;
     private String icon;
     private String color;
+
+    @Column(length = 2000)
+    private String description;
+
+    /** Ticket price in rupees. null or 0 means a free event. */
+    private Integer price;
+
+    /** ACTIVE or CANCELLED. null (older rows) is treated as ACTIVE. */
+    private String status = "ACTIVE";
+
+    /** The club that owns this event. null means the college/admin. */
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "organizer_id")
+    private Organizer organizer;
+
+    /** Seats still free. Calculated, not stored. */
+    @Transient
+    private Integer seatsLeft;
+
+    @Transient
+    private String organizerName;
+
+    @Transient
+    private Long organizerId;
 
     public Event() {
     }
@@ -110,4 +141,25 @@ public class Event {
     public void setColor(String color) {
         this.color = color;
     }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
+    public Integer getPrice() { return price == null ? 0 : price; }
+    public void setPrice(Integer price) { this.price = price; }
+
+    public String getStatus() { return status == null ? "ACTIVE" : status; }
+    public void setStatus(String status) { this.status = status; }
+
+    public Organizer getOrganizer() { return organizer; }
+    public void setOrganizer(Organizer organizer) { this.organizer = organizer; }
+
+    public Integer getSeatsLeft() { return seatsLeft; }
+    public void setSeatsLeft(Integer seatsLeft) { this.seatsLeft = seatsLeft; }
+
+    public String getOrganizerName() { return organizerName; }
+    public void setOrganizerName(String organizerName) { this.organizerName = organizerName; }
+
+    public Long getOrganizerId() { return organizerId; }
+    public void setOrganizerId(Long organizerId) { this.organizerId = organizerId; }
 }

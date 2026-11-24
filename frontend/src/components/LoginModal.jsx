@@ -183,6 +183,11 @@ function LoginModal({
         </p>
 
         <p className="auth-note">
+          Club organizer? <a href="/organizer">Organizer login</a> ·{" "}
+          College admin? <a href="/admin">Admin login</a>
+        </p>
+
+        <p className="auth-note">
           By continuing, you agree to use CampusConnect responsibly.
         </p>
       </section>
